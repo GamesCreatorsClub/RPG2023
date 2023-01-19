@@ -5,6 +5,7 @@ import Utils
 
 pygame.init()
 
+
 def load_level(level):
     block_list = []
     x = y = 0
@@ -16,35 +17,35 @@ def load_level(level):
                     "type": "forest",
                     "can_move": False,
                     "rand": random.random()
-                    }
+                }
             elif col == "H":
                 block = {
                     "rect": pygame.Rect(x, y, 16, 16),
                     "type": "house",
                     "can_move": False,
                     "rand": random.random()
-                    }
+                }
             elif col == "X":
                 block = {
                     "rect": pygame.Rect(x, y, 16, 16),
                     "type": "blocker",
                     "can_move": False,
                     "rand": random.random()
-                    }
+                }
             elif col == "+":
                 block = {
                     "rect": pygame.Rect(x, y, 16, 16),
                     "type": "path",
                     "can_move": True,
                     "rand": random.random()
-                    }
+                }
             else:
                 block = {
                     "rect": pygame.Rect(x, y, 16, 16),
                     "type": "grass",
                     "can_move": True,
                     "rand": random.random()
-                    }
+                }
             block_list.append(block)
             x = x + 16
         y = y + 16
@@ -52,7 +53,8 @@ def load_level(level):
         
     return block_list
 
-screen = pygame.display.set_mode((320,180), pygame.SCALED)
+
+screen = pygame.display.set_mode((320, 180), pygame.SCALED)
 
 ##########################################################################
 # This is where the tilesheet gets loaded, this uses the Utils file
@@ -65,9 +67,9 @@ dungeon_tiles = Utils.unpack_tilemap(dungeon_tilesheet, dungeon_tilesheet.get_wi
 game_state = "GAME"
 
 player = {
-    "rect": pygame.Rect(32,32,16,16),
+    "rect": pygame.Rect(32, 32, 16, 16),
     "speed": 2
-    }
+}
 
 blocks = load_level(Levels.level00)
 
@@ -115,7 +117,7 @@ while game_running:
             targetY.y -= player["speed"]
 
         for block in blocks:
-            if block["can_move"] == False:
+            if not block["can_move"]:
                 if targetX.colliderect(block["rect"]):
                     if targetX.x < block["rect"].x:
                         targetX.right = block["rect"].left
@@ -133,7 +135,7 @@ while game_running:
         ##################################################################################
         # DRAWING CODE
         # Background fill
-        screen.fill((222,125,87))
+        screen.fill((222, 125, 87))
         # Background tiles        
         for block in blocks:
             if block["type"] == "forest":
@@ -174,19 +176,19 @@ while game_running:
             if block["type"] == "forest":
                 if block["rect"].y == 0 and block["rect"].x == 0:
                     screen.blit(town_tiles[32], Utils.adjacent_coord(block["rect"], 16, 1, -1))
-                elif block["rect"].y == 10*16 and block["rect"].x == 0:
+                elif block["rect"].y == 10 * 16 and block["rect"].x == 0:
                     screen.blit(town_tiles[8], Utils.adjacent_coord(block["rect"], 16, 1, 1))
-                elif block["rect"].y == 10*16 and block["rect"].x == 19*16:
+                elif block["rect"].y == 10 * 16 and block["rect"].x == 19*16:
                     screen.blit(town_tiles[6], Utils.adjacent_coord(block["rect"], 16, -1, 1))
                 elif block["rect"].y == 0 and block["rect"].x == 19*16:
                     screen.blit(town_tiles[30], Utils.adjacent_coord(block["rect"], 16, -1, -1))
                 elif block["rect"].y == 0:
                     screen.blit(town_tiles[31], Utils.adjacent_coord(block["rect"], 16, 0, -1))
-                elif block["rect"].y == 10*16:
+                elif block["rect"].y == 10 * 16:
                     screen.blit(town_tiles[7], Utils.adjacent_coord(block["rect"], 16, 0, 1))
                 elif block["rect"].x == 0:
                     screen.blit(town_tiles[20], Utils.adjacent_coord(block["rect"], 16, 1, 0))
-                elif block["rect"].x == 19*16:
+                elif block["rect"].x == 19 * 16:
                     screen.blit(town_tiles[18], Utils.adjacent_coord(block["rect"], 16, -1, 0))
         
     pygame.display.flip()
