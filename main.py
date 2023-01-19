@@ -6,52 +6,90 @@ import Utils
 pygame.init()
 
 
-def load_level(level):
-    block_list = []
+def load_level(level, img_tiles):
+    def create_block(x, y, block_type, can_move, img_tile):
+        block = {
+            "rect": pygame.Rect(x, y, 16, 16),
+            "type": block_type,
+            "can_move": can_move,
+        }
+        if img_tile is not None:
+            block["img_tile"] = img_tiles[img_tile]
+        return block
+
+    level_width = 0
+    background_layer = []
+    main_layer = []
+    top_layer = []
+
     x = y = 0
     for row in level:
+        level_width = max(level_width, len(row))
         for col in row:
             if col == "#":
-                block = {
-                    "rect": pygame.Rect(x, y, 16, 16),
-                    "type": "forest",
-                    "can_move": False,
-                    "rand": random.random()
-                }
+                # background_layer.append(block)
+                main_layer.append(create_block(x, y, "forest", False, 19))
             elif col == "H":
-                block = {
-                    "rect": pygame.Rect(x, y, 16, 16),
-                    "type": "house",
-                    "can_move": False,
-                    "rand": random.random()
-                }
+                main_layer.append(create_block(x, y, "house", False, 85))
             elif col == "X":
-                block = {
-                    "rect": pygame.Rect(x, y, 16, 16),
-                    "type": "blocker",
-                    "can_move": False,
-                    "rand": random.random()
-                }
+                main_layer.append(create_block(x, y, "blocker", False, None))
             elif col == "+":
-                block = {
-                    "rect": pygame.Rect(x, y, 16, 16),
-                    "type": "path",
-                    "can_move": True,
-                    "rand": random.random()
-                }
+                background_layer.append(create_block(x, y, "path", True, 43))
+                main_layer.append(create_block(x, y, "empty", True, None))
             else:
-                block = {
-                    "rect": pygame.Rect(x, y, 16, 16),
-                    "type": "grass",
-                    "can_move": True,
-                    "rand": random.random()
-                }
-            block_list.append(block)
+                r = random.random()
+                if r < 0.7:
+                    img_tile = 0
+                elif r < 0.9:
+                    img_tile = 1
+                else:
+                    img_tile = 2
+
+                background_layer.append(create_block(x, y, "grass", True, img_tile))
+                main_layer.append(create_block(x, y, "empty", True, None))
+
             x = x + 16
         y = y + 16
         x = 0
-        
-    return block_list
+
+        def calculate_index(i, x_offset, y_offset):
+            return i + x_offset + y_offset * level_width
+
+        # Fix for house - add correct images to blockers
+        for i, block in enumerate(main_layer):
+            if block["type"] == "house":
+                main_layer[calculate_index(i, -2, 0)]["img_tile"] = img_tiles[72]
+                main_layer[calculate_index(i, -1, 0)]["img_tile"] = img_tiles[84]
+                main_layer[calculate_index(i, 1, 0)]["img_tile"] = img_tiles[75]
+
+                main_layer[calculate_index(i, -2, -1)]["img_tile"] = img_tiles[60]
+                main_layer[calculate_index(i, -1, -1)]["img_tile"] = img_tiles[61]
+                main_layer[calculate_index(i, 0, -1)]["img_tile"] = img_tiles[63]
+                main_layer[calculate_index(i, 1, -1)]["img_tile"] = img_tiles[62]
+
+                main_layer[calculate_index(i, -2, -2)]["img_tile"] = img_tiles[48]
+                main_layer[calculate_index(i, -1, -2)]["img_tile"] = img_tiles[51]
+                main_layer[calculate_index(i, 0, -2)]["img_tile"] = img_tiles[49]
+                main_layer[calculate_index(i, 1, -2)]["img_tile"] = img_tiles[50]
+            elif block["type"] == "forest":
+                if block["rect"].y == 0 and block["rect"].x == 0:
+                    top_layer.append(create_block(16, 16, "forest", True, 32))
+                elif block["rect"].y == 10 * 16 and block["rect"].x == 0:
+                    top_layer.append(create_block(16, block["rect"].y - 16, "forest", True, 8))
+                elif block["rect"].y == 10 * 16 and block["rect"].x == 19 * 16:
+                    top_layer.append(create_block(block["rect"].x - 16, block["rect"].y - 16, "forest", True, 6))
+                elif block["rect"].y == 0 and block["rect"].x == 19*16:
+                    top_layer.append(create_block(block["rect"].x - 16, 16, "forest", True, 30))
+                elif block["rect"].y == 0:
+                    top_layer.append(create_block(block["rect"].x - 16, 16, "forest", True, 31))
+                elif block["rect"].y == 10 * 16:
+                    top_layer.append(create_block(block["rect"].x, block["rect"].y - 16, "forest", True, 7))
+                elif block["rect"].x == 0:
+                    top_layer.append(create_block(16, block["rect"].y, "forest", True, 20))
+                elif block["rect"].x == 19 * 16:
+                    top_layer.append(create_block(block["rect"].x - 16, block["rect"].y, "forest", True, 18))
+
+    return background_layer, main_layer, top_layer
 
 
 screen = pygame.display.set_mode((320, 180), pygame.SCALED)
@@ -71,7 +109,7 @@ player = {
     "speed": 2
 }
 
-blocks = load_level(Levels.level00)
+background_layer, main_layer, top_layer = load_level(Levels.level00, town_tiles)
 
 clock = pygame.time.Clock()
 
@@ -89,9 +127,9 @@ while game_running:
         game_state = "QUIT"
 
     if keys[pygame.K_j]:
-        blocks = load_level(Levels.level01)
+        background_layer, main_layer, top_layer = load_level(Levels.level01, town_tiles)
     if keys[pygame.K_i]:
-        blocks = load_level(Levels.level00)
+        background_layer, main_layer, top_layer = load_level(Levels.level00, town_tiles)
 
     ##################################################################################
     # QUIT state, setting the game state to this will close the game window
@@ -116,7 +154,7 @@ while game_running:
         if keys[pygame.K_w]:
             targetY.y -= player["speed"]
 
-        for block in blocks:
+        for block in main_layer:
             if not block["can_move"]:
                 if targetX.colliderect(block["rect"]):
                     if targetX.x < block["rect"].x:
@@ -136,61 +174,24 @@ while game_running:
         # DRAWING CODE
         # Background fill
         screen.fill((222, 125, 87))
-        # Background tiles        
-        for block in blocks:
-            if block["type"] == "forest":
-                screen.blit(town_tiles[19], block["rect"])
-            if block["type"] == "path":
-                screen.blit(town_tiles[43], block["rect"])
-            if block["type"] == "grass":
-                if block["rand"] < 0.7:
-                    screen.blit(town_tiles[0], block["rect"])
-                elif block["rand"] < 0.9:
-                    screen.blit(town_tiles[1], block["rect"])
-                else:
-                    screen.blit(town_tiles[2], block["rect"])
+
+        # Background tiles
+        for block in background_layer:
+            screen.blit(block["img_tile"], block["rect"])
 
         # Main layer            
-        for block in blocks:
-            if block["type"] == "house":
-                screen.blit(town_tiles[85], block["rect"])
-                screen.blit(town_tiles[72], Utils.adjacent_coord(block["rect"], 16, -2, 0))
-                screen.blit(town_tiles[84], Utils.adjacent_coord(block["rect"], 16, -1, 0))
-                screen.blit(town_tiles[75], Utils.adjacent_coord(block["rect"], 16, 1, 0))
-                
-                screen.blit(town_tiles[60], Utils.adjacent_coord(block["rect"], 16, -2, 1))
-                screen.blit(town_tiles[61], Utils.adjacent_coord(block["rect"], 16, -1, 1))
-                screen.blit(town_tiles[63], Utils.adjacent_coord(block["rect"], 16, 0, 1))
-                screen.blit(town_tiles[62], Utils.adjacent_coord(block["rect"], 16, 1, 1))
+        for block in main_layer:
+            if "img_tile" in block:
+                screen.blit(block["img_tile"], block["rect"])
 
-                screen.blit(town_tiles[48], Utils.adjacent_coord(block["rect"], 16, -2, 2))
-                screen.blit(town_tiles[51], Utils.adjacent_coord(block["rect"], 16, -1, 2))
-                screen.blit(town_tiles[49], Utils.adjacent_coord(block["rect"], 16, 0, 2))
-                screen.blit(town_tiles[50], Utils.adjacent_coord(block["rect"], 16, 1, 2))
-        
         # Player layer
         screen.blit(dungeon_tiles[97], player["rect"])
         
         # Top layer
-        for block in blocks:
-            if block["type"] == "forest":
-                if block["rect"].y == 0 and block["rect"].x == 0:
-                    screen.blit(town_tiles[32], Utils.adjacent_coord(block["rect"], 16, 1, -1))
-                elif block["rect"].y == 10 * 16 and block["rect"].x == 0:
-                    screen.blit(town_tiles[8], Utils.adjacent_coord(block["rect"], 16, 1, 1))
-                elif block["rect"].y == 10 * 16 and block["rect"].x == 19*16:
-                    screen.blit(town_tiles[6], Utils.adjacent_coord(block["rect"], 16, -1, 1))
-                elif block["rect"].y == 0 and block["rect"].x == 19*16:
-                    screen.blit(town_tiles[30], Utils.adjacent_coord(block["rect"], 16, -1, -1))
-                elif block["rect"].y == 0:
-                    screen.blit(town_tiles[31], Utils.adjacent_coord(block["rect"], 16, 0, -1))
-                elif block["rect"].y == 10 * 16:
-                    screen.blit(town_tiles[7], Utils.adjacent_coord(block["rect"], 16, 0, 1))
-                elif block["rect"].x == 0:
-                    screen.blit(town_tiles[20], Utils.adjacent_coord(block["rect"], 16, 1, 0))
-                elif block["rect"].x == 19 * 16:
-                    screen.blit(town_tiles[18], Utils.adjacent_coord(block["rect"], 16, -1, 0))
-        
+        for block in top_layer:
+            if "img_tile" in block:
+                screen.blit(block["img_tile"], block["rect"])
+
     pygame.display.flip()
 
 pygame.quit()
