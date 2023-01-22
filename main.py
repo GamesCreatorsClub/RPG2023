@@ -113,9 +113,15 @@ player = {
     "over_tiles": []
 }
 
-current_level = 0
-
 background_layer, main_layer, top_layer = load_level(Levels.level00, town_tiles)
+
+current_level = {
+    "map_no": 0,
+    "background_layer": background_layer,
+    "main_layer": main_layer,
+    "top_layer": top_layer
+}
+
 
 clock = pygame.time.Clock()
 
@@ -196,16 +202,19 @@ while game_running:
                         #     block["enter_tile"]()
                         if block["type"] == "load-map":
                             map_no = block["map"]
+                            current_map_no = current_level["map_no"]
                             background_layer, main_layer, top_layer = load_level(Levels.levels[map_no], town_tiles)
-
                             # Find block to get us back and place player on that block. Also
                             # remove all blocks player is currently over with that block
                             for block in main_layer:
-                                if block["type"] == "load-map" and block["map"] == current_level:
+                                if block["type"] == "load-map" and block["map"] == current_map_no:
                                     player["over_tiles"] = [block]
                                     player_rect.x = block["rect"].x
                                     player_rect.y = block["rect"].y
-                                    current_level = map_no
+                                    current_level["map_no"] = map_no
+                                    current_level["background_layer"] = background_layer,
+                                    current_level["main_layer"] = main_layer,
+                                    current_level["top_layer"] = top_layer
 
         ##################################################################################
         # DRAWING CODE
