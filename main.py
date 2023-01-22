@@ -27,7 +27,6 @@ def load_level(level, img_tiles):
         level_width = max(level_width, len(row))
         for col in row:
             if col == "#":
-                # background_layer.append(block)
                 main_layer.append(create_block(x, y, "forest", False, 19))
             elif col == "H":
                 main_layer.append(create_block(x, y, "house", False, 85))
@@ -36,6 +35,10 @@ def load_level(level, img_tiles):
             elif col == "+":
                 background_layer.append(create_block(x, y, "path", True, 43))
                 main_layer.append(create_block(x, y, "empty", True, None))
+            elif col in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+                block = create_block(x, y, "load-map", True, None)
+                block["map"] = int(col)
+                main_layer.append(block)
             else:
                 r = random.random()
                 if r < 0.7:
@@ -106,8 +109,11 @@ game_state = "GAME"
 
 player = {
     "rect": pygame.Rect(32, 32, 16, 16),
-    "speed": 2
+    "speed": 2,
+    "over_tiles": []
 }
+
+current_level = 0
 
 background_layer, main_layer, top_layer = load_level(Levels.level00, town_tiles)
 
@@ -142,8 +148,9 @@ while game_running:
         
         ##################################################################################
         # INPUT CODE
-        targetX = pygame.Rect(player["rect"])
-        targetY = pygame.Rect(player["rect"])
+        player_rect = player["rect"]
+        targetX = pygame.Rect(player_rect)
+        targetY = pygame.Rect(player_rect)
         
         if keys[pygame.K_d]:
             targetX.x += player["speed"]
@@ -167,8 +174,38 @@ while game_running:
                     else:
                         targetY.top = block["rect"].bottom
 
-        player["rect"].x = targetX.x
-        player["rect"].y = targetY.y
+        if player_rect.x != targetX.x or player_rect.y != targetY.y:
+            player_rect.x = targetX.x
+            player_rect.y = targetY.y
+
+            over_tiles = player["over_tiles"]
+            for block in main_layer:
+                block_rect = block["rect"]
+                collides = player_rect.colliderect(block_rect)
+                if block in over_tiles:
+                    if not collides:
+                        del over_tiles[over_tiles.index(block)]
+                        # TODO move to following:
+                        # if "leave_tile" in block:
+                        #     block["leave_tile"]()
+                else:
+                    if collides:
+                        over_tiles.append(block)
+                        # TODO move to following:
+                        # if "enter_tile" in block:
+                        #     block["enter_tile"]()
+                        if block["type"] == "load-map":
+                            map_no = block["map"]
+                            background_layer, main_layer, top_layer = load_level(Levels.levels[map_no], town_tiles)
+
+                            # Find block to get us back and place player on that block. Also
+                            # remove all blocks player is currently over with that block
+                            for block in main_layer:
+                                if block["type"] == "load-map" and block["map"] == current_level:
+                                    player["over_tiles"] = [block]
+                                    player_rect.x = block["rect"].x
+                                    player_rect.y = block["rect"].y
+                                    current_level = map_no
 
         ##################################################################################
         # DRAWING CODE
