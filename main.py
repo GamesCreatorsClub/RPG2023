@@ -6,6 +6,25 @@ import Utils
 pygame.init()
 
 
+def change_map(block, current_level):
+    map_no = block["map"]
+    current_map_no = current_level["map_no"]
+    player = current_level["player"]
+    background_layer, main_layer, top_layer = load_level(Levels.levels[map_no], town_tiles)
+    # Find block to get us back and place player on that block. Also
+    # remove all blocks player is currently over with that block
+    for block in main_layer:
+        if block["type"] == "load-map" and block["map"] == current_map_no:
+            player["over_tiles"] = [block]
+            player_rect = player["rect"]
+            player_rect.x = block["rect"].x
+            player_rect.y = block["rect"].y
+            current_level["map_no"] = map_no
+            current_level["background_layer"] = background_layer
+            current_level["main_layer"] = main_layer
+            current_level["top_layer"] = top_layer
+
+
 def load_level(level, img_tiles):
     def create_block(x, y, block_type, can_move, img_tile):
         block = {
@@ -38,6 +57,7 @@ def load_level(level, img_tiles):
             elif col in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
                 block = create_block(x, y, "load-map", True, None)
                 block["map"] = int(col)
+                block["on_enter_tile"] = change_map
                 main_layer.append(block)
             else:
                 r = random.random()
@@ -107,21 +127,29 @@ dungeon_tiles = Utils.unpack_tilemap(dungeon_tilesheet, dungeon_tilesheet.get_wi
 
 game_state = "GAME"
 
-player = {
-    "rect": pygame.Rect(32, 32, 16, 16),
-    "speed": 2,
-    "over_tiles": []
-}
 
-background_layer, main_layer, top_layer = load_level(Levels.level00, town_tiles)
+def init_first_level():
 
-current_level = {
-    "map_no": 0,
-    "background_layer": background_layer,
-    "main_layer": main_layer,
-    "top_layer": top_layer
-}
+    player = {
+        "rect": pygame.Rect(32, 32, 16, 16),
+        "speed": 2,
+        "over_tiles": []
+    }
 
+    background_layer, main_layer, top_layer = load_level(Levels.level00, town_tiles)
+
+    current_level = {
+        "map_no": 0,
+        "player": player,
+        "background_layer": background_layer,
+        "main_layer": main_layer,
+        "top_layer": top_layer
+    }
+
+    return current_level
+
+
+current_level = init_first_level()
 
 clock = pygame.time.Clock()
 
@@ -151,7 +179,8 @@ while game_running:
     ##################################################################################
     # GAME state, this is where we control the main game
     if game_state == "GAME":
-        
+        player = current_level["player"]
+
         ##################################################################################
         # INPUT CODE
         player_rect = player["rect"]
@@ -167,7 +196,7 @@ while game_running:
         if keys[pygame.K_w]:
             targetY.y -= player["speed"]
 
-        for block in main_layer:
+        for block in current_level["main_layer"]:
             if not block["can_move"]:
                 if targetX.colliderect(block["rect"]):
                     if targetX.x < block["rect"].x:
@@ -185,36 +214,19 @@ while game_running:
             player_rect.y = targetY.y
 
             over_tiles = player["over_tiles"]
-            for block in main_layer:
+            for block in current_level["main_layer"]:
                 block_rect = block["rect"]
                 collides = player_rect.colliderect(block_rect)
                 if block in over_tiles:
                     if not collides:
                         del over_tiles[over_tiles.index(block)]
-                        # TODO move to following:
-                        # if "leave_tile" in block:
-                        #     block["leave_tile"]()
+                        if "on_leave_tile" in block:
+                            block["on_leave_tile"](block, current_level)
                 else:
                     if collides:
                         over_tiles.append(block)
-                        # TODO move to following:
-                        # if "enter_tile" in block:
-                        #     block["enter_tile"]()
-                        if block["type"] == "load-map":
-                            map_no = block["map"]
-                            current_map_no = current_level["map_no"]
-                            background_layer, main_layer, top_layer = load_level(Levels.levels[map_no], town_tiles)
-                            # Find block to get us back and place player on that block. Also
-                            # remove all blocks player is currently over with that block
-                            for block in main_layer:
-                                if block["type"] == "load-map" and block["map"] == current_map_no:
-                                    player["over_tiles"] = [block]
-                                    player_rect.x = block["rect"].x
-                                    player_rect.y = block["rect"].y
-                                    current_level["map_no"] = map_no
-                                    current_level["background_layer"] = background_layer,
-                                    current_level["main_layer"] = main_layer,
-                                    current_level["top_layer"] = top_layer
+                        if "on_enter_tile" in block:
+                            block["on_enter_tile"](block, current_level)
 
         ##################################################################################
         # DRAWING CODE
@@ -222,11 +234,11 @@ while game_running:
         screen.fill((222, 125, 87))
 
         # Background tiles
-        for block in background_layer:
+        for block in current_level["background_layer"]:
             screen.blit(block["img_tile"], block["rect"])
 
         # Main layer            
-        for block in main_layer:
+        for block in current_level["main_layer"]:
             if "img_tile" in block:
                 screen.blit(block["img_tile"], block["rect"])
 
@@ -234,7 +246,7 @@ while game_running:
         screen.blit(dungeon_tiles[97], player["rect"])
         
         # Top layer
-        for block in top_layer:
+        for block in current_level["top_layer"]:
             if "img_tile" in block:
                 screen.blit(block["img_tile"], block["rect"])
 
