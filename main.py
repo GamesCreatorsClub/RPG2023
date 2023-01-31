@@ -6,6 +6,9 @@ import Utils
 pygame.init()
 
 
+WINDOW_WIDTH = 320
+WINDOW_HEIGHT = 180
+
 def change_map(block, current_level):
     map_no = block["map"]
     current_map_no = current_level["map_no"]
@@ -115,7 +118,7 @@ def load_level(level):
     return background_layer, main_layer, top_layer
 
 
-screen = pygame.display.set_mode((320, 180), pygame.SCALED)
+screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SCALED)
 
 ##########################################################################
 # This is where the tilesheet gets loaded, this uses the Utils file
@@ -189,12 +192,20 @@ while game_running:
         
         if keys[pygame.K_d]:
             targetX.x += player["speed"]
+            if targetX.x > WINDOW_WIDTH - player_rect.width:
+                targetX.x = WINDOW_WIDTH - player_rect.width
         if keys[pygame.K_a]:
             targetX.x -= player["speed"]
+            if targetX.x < 0:
+                targetX.x = 0
         if keys[pygame.K_s]:
             targetY.y += player["speed"]
+            if targetY.y > WINDOW_HEIGHT - player_rect.height:
+                targetY.y = WINDOW_HEIGHT - player_rect.height
         if keys[pygame.K_w]:
             targetY.y -= player["speed"]
+            if targetY.y < 0:
+                targetY.y = 0
 
         for block in current_level["main_layer"]:
             if not block["can_move"]:
