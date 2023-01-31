@@ -10,7 +10,7 @@ def change_map(block, current_level):
     map_no = block["map"]
     current_map_no = current_level["map_no"]
     player = current_level["player"]
-    background_layer, main_layer, top_layer = load_level(Levels.levels[map_no], town_tiles)
+    background_layer, main_layer, top_layer = load_level(Levels.levels[map_no])
     # Find block to get us back and place player on that block. Also
     # remove all blocks player is currently over with that block
     for block in main_layer:
@@ -25,7 +25,7 @@ def change_map(block, current_level):
             current_level["top_layer"] = top_layer
 
 
-def load_level(level, img_tiles):
+def load_level(level):
     def create_block(x, y, block_type, can_move, img_tile):
         block = {
             "rect": pygame.Rect(x, y, 16, 16),
@@ -33,7 +33,7 @@ def load_level(level, img_tiles):
             "can_move": can_move,
         }
         if img_tile is not None:
-            block["img_tile"] = img_tiles[img_tile]
+            block["img_tile"] = img_tile
         return block
 
     level_width = 0
@@ -42,7 +42,7 @@ def load_level(level, img_tiles):
     top_layer = []
 
     x = y = 0
-    for row in level:
+    for row in level["map"]:
         level_width = max(level_width, len(row))
         for col in row:
             if col == "#":
@@ -81,19 +81,19 @@ def load_level(level, img_tiles):
         # Fix for house - add correct images to blockers
         for i, block in enumerate(main_layer):
             if block["type"] == "house":
-                main_layer[calculate_index(i, -2, 0)]["img_tile"] = img_tiles[72]
-                main_layer[calculate_index(i, -1, 0)]["img_tile"] = img_tiles[84]
-                main_layer[calculate_index(i, 1, 0)]["img_tile"] = img_tiles[75]
+                main_layer[calculate_index(i, -2, 0)]["img_tile"] = 72
+                main_layer[calculate_index(i, -1, 0)]["img_tile"] = 84
+                main_layer[calculate_index(i, 1, 0)]["img_tile"] = 75
 
-                main_layer[calculate_index(i, -2, -1)]["img_tile"] = img_tiles[60]
-                main_layer[calculate_index(i, -1, -1)]["img_tile"] = img_tiles[61]
-                main_layer[calculate_index(i, 0, -1)]["img_tile"] = img_tiles[63]
-                main_layer[calculate_index(i, 1, -1)]["img_tile"] = img_tiles[62]
+                main_layer[calculate_index(i, -2, -1)]["img_tile"] = 60
+                main_layer[calculate_index(i, -1, -1)]["img_tile"] = 61
+                main_layer[calculate_index(i, 0, -1)]["img_tile"] = 63
+                main_layer[calculate_index(i, 1, -1)]["img_tile"] = 62
 
-                main_layer[calculate_index(i, -2, -2)]["img_tile"] = img_tiles[48]
-                main_layer[calculate_index(i, -1, -2)]["img_tile"] = img_tiles[51]
-                main_layer[calculate_index(i, 0, -2)]["img_tile"] = img_tiles[49]
-                main_layer[calculate_index(i, 1, -2)]["img_tile"] = img_tiles[50]
+                main_layer[calculate_index(i, -2, -2)]["img_tile"] = 48
+                main_layer[calculate_index(i, -1, -2)]["img_tile"] = 51
+                main_layer[calculate_index(i, 0, -2)]["img_tile"] = 49
+                main_layer[calculate_index(i, 1, -2)]["img_tile"] = 50
             elif block["type"] == "forest":
                 if block["rect"].y == 0 and block["rect"].x == 0:
                     top_layer.append(create_block(16, 16, "forest", True, 32))
@@ -136,7 +136,7 @@ def init_first_level():
         "over_tiles": []
     }
 
-    background_layer, main_layer, top_layer = load_level(Levels.level00, town_tiles)
+    background_layer, main_layer, top_layer = load_level(Levels.level00)
 
     current_level = {
         "map_no": 0,
@@ -167,9 +167,9 @@ while game_running:
         game_state = "QUIT"
 
     if keys[pygame.K_j]:
-        background_layer, main_layer, top_layer = load_level(Levels.level01, town_tiles)
+        background_layer, main_layer, top_layer = load_level(Levels.level01)
     if keys[pygame.K_i]:
-        background_layer, main_layer, top_layer = load_level(Levels.level00, town_tiles)
+        background_layer, main_layer, top_layer = load_level(Levels.level00)
 
     ##################################################################################
     # QUIT state, setting the game state to this will close the game window
@@ -235,12 +235,12 @@ while game_running:
 
         # Background tiles
         for block in current_level["background_layer"]:
-            screen.blit(block["img_tile"], block["rect"])
+            screen.blit(town_tiles[block["img_tile"]], block["rect"])
 
         # Main layer            
         for block in current_level["main_layer"]:
             if "img_tile" in block:
-                screen.blit(block["img_tile"], block["rect"])
+                screen.blit(town_tiles[block["img_tile"]], block["rect"])
 
         # Player layer
         screen.blit(dungeon_tiles[97], player["rect"])
@@ -248,7 +248,7 @@ while game_running:
         # Top layer
         for block in current_level["top_layer"]:
             if "img_tile" in block:
-                screen.blit(block["img_tile"], block["rect"])
+                screen.blit(town_tiles[block["img_tile"]], block["rect"])
 
     pygame.display.flip()
 
