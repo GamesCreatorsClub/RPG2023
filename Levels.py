@@ -2,6 +2,8 @@ import random
 
 import pygame
 
+from houses import finish_house1, finish_house2, finish_house_small1
+
 levels = []
 
 
@@ -34,7 +36,7 @@ def load_level(level):
     level["main_layer"] = main_layer
     level["top_layer"] = top_layer
 
-    translations = default_transation.copy()
+    translations = default_translation.copy()
     translations |= level["map_translations"]
 
     x = y = 0
@@ -44,7 +46,7 @@ def load_level(level):
             if col not in translations:
                 print("*** cannot find translation for '" + col + "' for level " + (level["name"] if "name" in level else "unknown"))
             else:
-                translations[col](level, top_layer, main_layer, background_layer, x, y, col)
+                translations[col](level, x, y, col)
 
             x = x + 16
         y = y + 16
@@ -53,7 +55,7 @@ def load_level(level):
         # Fix for house - add correct images to blockers
         for i, block in enumerate(main_layer):
             if "finish_init" in block:
-                block["finish_init"](block, level, top_layer, main_layer, background_layer)
+                block["finish_init"](block, level)
 
     return background_layer, main_layer, top_layer
 
@@ -71,8 +73,9 @@ def create_block(x, y, block_type, can_move, img_tile):
     return block
 
 
-def create_forest(layer_definition, top_layer, main_layer, background_layer, x, y, char):
-    def finish_forest(block, layer_definition, top_layer, main_layer, background_layer):
+def create_forest(layer_definition, x, y, char):
+    def finish_forest(block, layer_definition):
+        top_layer = layer_definition["top_layer"]
         if block["rect"].y == 0 and block["rect"].x == 0:
             top_layer.append(create_block(16, 16, "forest", True, 32))
         elif block["rect"].y == 10 * 16 and block["rect"].x == 0:
@@ -91,55 +94,45 @@ def create_forest(layer_definition, top_layer, main_layer, background_layer, x, 
             top_layer.append(create_block(block["rect"].x - 16, block["rect"].y, "forest", True, 18))
 
     block = create_block(x, y, "forest", False, 19)
-    main_layer.append(block)
+    layer_definition["main_layer"].append(block)
     block["finish_init"] = finish_forest
 
 
-def create_blocker(layer_definition, top_layer, main_layer, background_layer, x, y, char):
-    main_layer.append(create_block(x, y, "blocker", False, None))
+def create_blocker(layer_definition, x, y, char):
+    layer_definition["main_layer"].append(create_block(x, y, "blocker", False, None))
 
 
-def create_house(layer_definition, top_layer, main_layer, background_layer, x, y, char):
-    def finish_house(block, layer_definition, top_layer, main_layer, background_layer):
-        line_width = max(len(line) for line in layer_definition["map"])
-
-        def calculate_index(i, x_offset, y_offset):
-            return i + x_offset + y_offset * line_width
-
-        # i = block["x"] + block["y"] * line_width
-        i = main_layer.index(block)
-        main_layer[calculate_index(i, -2, 0)]["img_tile"] = 72
-        main_layer[calculate_index(i, -1, 0)]["img_tile"] = 84
-        main_layer[calculate_index(i, 1, 0)]["img_tile"] = 75
-
-        main_layer[calculate_index(i, -2, -1)]["img_tile"] = 60
-        main_layer[calculate_index(i, -1, -1)]["img_tile"] = 61
-        main_layer[calculate_index(i, 0, -1)]["img_tile"] = 63
-        main_layer[calculate_index(i, 1, -1)]["img_tile"] = 62
-
-        main_layer[calculate_index(i, -2, -2)]["img_tile"] = 48
-        main_layer[calculate_index(i, -1, -2)]["img_tile"] = 51
-        main_layer[calculate_index(i, 0, -2)]["img_tile"] = 49
-        main_layer[calculate_index(i, 1, -2)]["img_tile"] = 50
-
+def create_house1(layer_definition, x, y, char):
     block = create_block(x, y, "house", False, 85)
-    block["finish_init"] = finish_house
-    main_layer.append(block)
+    block["finish_init"] = finish_house1
+    layer_definition["main_layer"].append(block)
 
 
-def create_path(layer_definition, top_layer, main_layer, bottom_layer, x, y, char):
-    bottom_layer.append(create_block(x, y, "path", True, 43))
-    main_layer.append(create_block(x, y, "empty", True, None))
+def create_house2(layer_definition, x, y, char):
+    block = create_block(x, y, "house", False, 89)
+    block["finish_init"] = finish_house2
+    layer_definition["main_layer"].append(block)
 
 
-def create_portal(layer_definition, top_layer, main_layer, background_layer, x, y, char):
+def create_house_small1(layer_definition, x, y, char):
+    block = create_block(x, y, "house", False, 89)
+    block["finish_init"] = finish_house_small1
+    layer_definition["main_layer"].append(block)
+
+
+def create_path(layer_definition, x, y, char):
+    layer_definition["background_layer"].append(create_block(x, y, "path", True, 43))
+    layer_definition["main_layer"].append(create_block(x, y, "empty", True, None))
+
+
+def create_portal(layer_definition, x, y, char):
     block = create_block(x, y, "load-map", True, None)
     block["map"] = int(char)
     block["on_enter_tile"] = change_map
-    main_layer.append(block)
+    layer_definition["main_layer"].append(block)
 
 
-def create_background(layer_definition, top_layer, main_layer, background_layer, x, y, char):
+def create_background(layer_definition, x, y, char):
     r = random.random()
     if r < 0.7:
         img_tile = 0
@@ -148,11 +141,11 @@ def create_background(layer_definition, top_layer, main_layer, background_layer,
     else:
         img_tile = 2
 
-    background_layer.append(create_block(x, y, "grass", True, img_tile))
-    main_layer.append(create_block(x, y, "empty", True, None))
+    layer_definition["background_layer"].append(create_block(x, y, "grass", True, img_tile))
+    layer_definition["main_layer"].append(create_block(x, y, "empty", True, None))
 
 
-default_transation = {
+default_translation = {
     "#": create_forest,
     "+": create_path,
     "X": create_blocker,
@@ -176,7 +169,7 @@ levels.append({
         "#                  #",
         "#   ++++++++ XXXX  #",
         "#   +      + XXXX  #",
-        "1++++      + XXHX  #",
+        "1++++      + XXGX  #",
         "#   + XXXX +   +   #",
         "#   + XXXX +++++   #",
         "#   + XXHX     +   #",
@@ -185,7 +178,8 @@ levels.append({
         "####################"
     ],
     "map_translations": {
-        "H": create_house,
+        "H": create_house1,
+        "G": create_house2,
     }
 })
 
@@ -196,14 +190,15 @@ levels.append({
         "#            XXXX  #",
         "#            XXXX  #",
         "#+++++++++++ XXHX  #",
-        "#          +++++   0",
-        "#          + XXXX  #",
-        "#          + XXXX  #",
-        "#          ++XXHX  #",
-        "#                  #",
+        "#          ++++++++0",
+        "#          +       #",
+        "#          +  XXX  #",
+        "#          +  XhX  #",
+        "#          +++++   #",
         "####################"
     ],
     "map_translations": {
-        "H": create_house,
+        "H": create_house2,
+        "h": create_house_small1,
     }
 })
