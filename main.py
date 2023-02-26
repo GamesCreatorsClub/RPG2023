@@ -1,5 +1,4 @@
 import pygame
-import random
 import Levels
 import Utils
 
@@ -8,114 +7,6 @@ pygame.init()
 
 WINDOW_WIDTH = 320
 WINDOW_HEIGHT = 180
-
-def change_map(block, current_level):
-    map_no = block["map"]
-    current_map_no = current_level["map_no"]
-    player = current_level["player"]
-    background_layer, main_layer, top_layer = load_level(Levels.levels[map_no])
-    # Find block to get us back and place player on that block. Also
-    # remove all blocks player is currently over with that block
-    for block in main_layer:
-        if block["type"] == "load-map" and block["map"] == current_map_no:
-            player["over_tiles"] = [block]
-            player_rect = player["rect"]
-            player_rect.x = block["rect"].x
-            player_rect.y = block["rect"].y
-            current_level["map_no"] = map_no
-            current_level["background_layer"] = background_layer
-            current_level["main_layer"] = main_layer
-            current_level["top_layer"] = top_layer
-
-
-def load_level(level):
-    def create_block(x, y, block_type, can_move, img_tile):
-        block = {
-            "rect": pygame.Rect(x, y, 16, 16),
-            "type": block_type,
-            "can_move": can_move,
-        }
-        if img_tile is not None:
-            block["img_tile"] = img_tile
-        return block
-
-    level_width = 0
-    background_layer = []
-    main_layer = []
-    top_layer = []
-
-    x = y = 0
-    for row in level["map"]:
-        level_width = max(level_width, len(row))
-        for col in row:
-            if col == "#":
-                main_layer.append(create_block(x, y, "forest", False, 19))
-            elif col == "H":
-                main_layer.append(create_block(x, y, "house", False, 85))
-            elif col == "X":
-                main_layer.append(create_block(x, y, "blocker", False, None))
-            elif col == "+":
-                background_layer.append(create_block(x, y, "path", True, 43))
-                main_layer.append(create_block(x, y, "empty", True, None))
-            elif col in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
-                block = create_block(x, y, "load-map", True, None)
-                block["map"] = int(col)
-                block["on_enter_tile"] = change_map
-                main_layer.append(block)
-            else:
-                r = random.random()
-                if r < 0.7:
-                    img_tile = 0
-                elif r < 0.9:
-                    img_tile = 1
-                else:
-                    img_tile = 2
-
-                background_layer.append(create_block(x, y, "grass", True, img_tile))
-                main_layer.append(create_block(x, y, "empty", True, None))
-
-            x = x + 16
-        y = y + 16
-        x = 0
-
-        def calculate_index(i, x_offset, y_offset):
-            return i + x_offset + y_offset * level_width
-
-        # Fix for house - add correct images to blockers
-        for i, block in enumerate(main_layer):
-            if block["type"] == "house":
-                main_layer[calculate_index(i, -2, 0)]["img_tile"] = 72
-                main_layer[calculate_index(i, -1, 0)]["img_tile"] = 84
-                main_layer[calculate_index(i, 1, 0)]["img_tile"] = 75
-
-                main_layer[calculate_index(i, -2, -1)]["img_tile"] = 60
-                main_layer[calculate_index(i, -1, -1)]["img_tile"] = 61
-                main_layer[calculate_index(i, 0, -1)]["img_tile"] = 63
-                main_layer[calculate_index(i, 1, -1)]["img_tile"] = 62
-
-                main_layer[calculate_index(i, -2, -2)]["img_tile"] = 48
-                main_layer[calculate_index(i, -1, -2)]["img_tile"] = 51
-                main_layer[calculate_index(i, 0, -2)]["img_tile"] = 49
-                main_layer[calculate_index(i, 1, -2)]["img_tile"] = 50
-            elif block["type"] == "forest":
-                if block["rect"].y == 0 and block["rect"].x == 0:
-                    top_layer.append(create_block(16, 16, "forest", True, 32))
-                elif block["rect"].y == 10 * 16 and block["rect"].x == 0:
-                    top_layer.append(create_block(16, block["rect"].y - 16, "forest", True, 8))
-                elif block["rect"].y == 10 * 16 and block["rect"].x == 19 * 16:
-                    top_layer.append(create_block(block["rect"].x - 16, block["rect"].y - 16, "forest", True, 6))
-                elif block["rect"].y == 0 and block["rect"].x == 19*16:
-                    top_layer.append(create_block(block["rect"].x - 16, 16, "forest", True, 30))
-                elif block["rect"].y == 0:
-                    top_layer.append(create_block(block["rect"].x - 16, 16, "forest", True, 31))
-                elif block["rect"].y == 10 * 16:
-                    top_layer.append(create_block(block["rect"].x, block["rect"].y - 16, "forest", True, 7))
-                elif block["rect"].x == 0:
-                    top_layer.append(create_block(16, block["rect"].y, "forest", True, 20))
-                elif block["rect"].x == 19 * 16:
-                    top_layer.append(create_block(block["rect"].x - 16, block["rect"].y, "forest", True, 18))
-
-    return background_layer, main_layer, top_layer
 
 
 screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SCALED)
@@ -139,7 +30,7 @@ def init_first_level():
         "over_tiles": []
     }
 
-    background_layer, main_layer, top_layer = load_level(Levels.level00)
+    background_layer, main_layer, top_layer = Levels.load_level(Levels.levels[0])
 
     current_level = {
         "map_no": 0,
@@ -170,9 +61,9 @@ while game_running:
         game_state = "QUIT"
 
     if keys[pygame.K_j]:
-        background_layer, main_layer, top_layer = load_level(Levels.level01)
+        background_layer, main_layer, top_layer = Levels.load_level(Levels.levels[1])
     if keys[pygame.K_i]:
-        background_layer, main_layer, top_layer = load_level(Levels.level00)
+        background_layer, main_layer, top_layer = Levels.load_level(Levels.levels[0])
 
     ##################################################################################
     # QUIT state, setting the game state to this will close the game window
