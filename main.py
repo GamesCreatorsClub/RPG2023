@@ -22,28 +22,35 @@ dungeon_tiles = Utils.unpack_tilemap(dungeon_tilesheet, dungeon_tilesheet.get_wi
 game_state = "GAME"
 
 
-def init_first_level():
-
+def initialise():
     player = {
         "rect": pygame.Rect(32, 32, 16, 16),
         "speed": 2,
         "over_tiles": []
     }
 
-    background_layer, main_layer, top_layer = Levels.load_level(Levels.levels[0])
+    for level in Levels.levels:
+        Levels.load_level(level)
 
     current_level = {
         "map_no": 0,
         "player": player,
-        "background_layer": background_layer,
-        "main_layer": main_layer,
-        "top_layer": top_layer
+        "background_layer": Levels.levels[0]["background_layer"],
+        "main_layer": Levels.levels[0]["main_layer"],
+        "top_layer": Levels.levels[0]["top_layer"],
+        "level": Levels.levels[0]
     }
 
     return current_level
 
 
-current_level = init_first_level()
+def player_tries_to_leave_map():
+    for over_tile in over_tiles:
+        if "on_leave_map" in over_tile:
+            over_tile["on_leave_map"](over_tile, current_level)
+
+
+current_level = initialise()
 
 clock = pygame.time.Clock()
 
@@ -60,11 +67,6 @@ while game_running:
     if keys[pygame.K_ESCAPE]:
         game_state = "QUIT"
 
-    if keys[pygame.K_j]:
-        background_layer, main_layer, top_layer = Levels.load_level(Levels.levels[1])
-    if keys[pygame.K_i]:
-        background_layer, main_layer, top_layer = Levels.load_level(Levels.levels[0])
-
     ##################################################################################
     # QUIT state, setting the game state to this will close the game window
     if game_state == "QUIT":
@@ -80,23 +82,29 @@ while game_running:
         player_rect = player["rect"]
         targetX = pygame.Rect(player_rect)
         targetY = pygame.Rect(player_rect)
-        
+
+        tried_to_go_off_map = False
+        moved_player = False
         if keys[pygame.K_d]:
             targetX.x += player["speed"]
             if targetX.x > WINDOW_WIDTH - player_rect.width:
                 targetX.x = WINDOW_WIDTH - player_rect.width
+                tried_to_go_off_map = True
         if keys[pygame.K_a]:
             targetX.x -= player["speed"]
             if targetX.x < 0:
                 targetX.x = 0
+                tried_to_go_off_map = True
         if keys[pygame.K_s]:
             targetY.y += player["speed"]
             if targetY.y > WINDOW_HEIGHT - player_rect.height:
                 targetY.y = WINDOW_HEIGHT - player_rect.height
+                tried_to_go_off_map = True
         if keys[pygame.K_w]:
             targetY.y -= player["speed"]
             if targetY.y < 0:
                 targetY.y = 0
+                tried_to_go_off_map = True
 
         for block in current_level["main_layer"]:
             if not block["can_move"]:
@@ -114,7 +122,12 @@ while game_running:
         if player_rect.x != targetX.x or player_rect.y != targetY.y:
             player_rect.x = targetX.x
             player_rect.y = targetY.y
+            moved_player = True
 
+        if tried_to_go_off_map:
+            player_tries_to_leave_map()
+
+        if moved_player:
             over_tiles = player["over_tiles"]
             for block in current_level["main_layer"]:
                 block_rect = block["rect"]

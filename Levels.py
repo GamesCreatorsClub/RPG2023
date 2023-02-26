@@ -11,7 +11,10 @@ def change_map(block, current_level):
     map_no = block["map"]
     current_map_no = current_level["map_no"]
     player = current_level["player"]
-    background_layer, main_layer, top_layer = load_level(levels[map_no])
+    background_layer = levels[map_no]["background_layer"]
+    main_layer = levels[map_no]["main_layer"]
+    top_layer = levels[map_no]["top_layer"]
+
     # Find block to get us back and place player on that block. Also
     # remove all blocks player is currently over with that block
     for block in main_layer:
@@ -73,7 +76,7 @@ def create_block(x, y, block_type, can_move, img_tile):
     return block
 
 
-def create_forest(layer_definition, x, y, char):
+def create_forest(layer_definition, x, y, _char):
     def finish_forest(block, layer_definition):
         top_layer = layer_definition["top_layer"]
         if block["rect"].y == 0 and block["rect"].x == 0:
@@ -98,41 +101,43 @@ def create_forest(layer_definition, x, y, char):
     block["finish_init"] = finish_forest
 
 
-def create_blocker(layer_definition, x, y, char):
+def create_blocker(layer_definition, x, y, _char):
     layer_definition["main_layer"].append(create_block(x, y, "blocker", False, None))
 
 
-def create_house1(layer_definition, x, y, char):
+def create_house1(layer_definition, x, y, _char):
     block = create_block(x, y, "house", False, 85)
     block["finish_init"] = finish_house1
     layer_definition["main_layer"].append(block)
 
 
-def create_house2(layer_definition, x, y, char):
+def create_house2(layer_definition, x, y, _char):
     block = create_block(x, y, "house", False, 89)
     block["finish_init"] = finish_house2
     layer_definition["main_layer"].append(block)
 
 
-def create_house_small1(layer_definition, x, y, char):
+def create_house_small1(layer_definition, x, y, _char):
     block = create_block(x, y, "house", False, 89)
     block["finish_init"] = finish_house_small1
     layer_definition["main_layer"].append(block)
 
 
-def create_path(layer_definition, x, y, char):
+def create_path(layer_definition, x, y, _char):
     layer_definition["background_layer"].append(create_block(x, y, "path", True, 43))
     layer_definition["main_layer"].append(create_block(x, y, "empty", True, None))
 
 
 def create_portal(layer_definition, x, y, char):
     block = create_block(x, y, "load-map", True, None)
+    block["img_tile"] = 43
     block["map"] = int(char)
     block["on_enter_tile"] = change_map
+    block["on_leave_map"] = change_map
     layer_definition["main_layer"].append(block)
 
 
-def create_background(layer_definition, x, y, char):
+def create_background(layer_definition, x, y, _char):
     r = random.random()
     if r < 0.7:
         img_tile = 0
@@ -164,6 +169,7 @@ default_translation = {
 
 
 levels.append({
+    "name": "level1",
     "map": [
         "####################",
         "#                  #",
@@ -184,6 +190,7 @@ levels.append({
 })
 
 levels.append({
+    "name": "level2",
     "map": [
         "####################",
         "#                  #",
