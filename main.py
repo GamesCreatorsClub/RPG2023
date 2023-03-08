@@ -1,5 +1,5 @@
 import pygame
-import Levels
+import levels
 import Utils
 
 pygame.init()
@@ -29,16 +29,16 @@ def initialise():
         "over_tiles": []
     }
 
-    for level in Levels.levels:
-        Levels.load_level(level)
+    for level in levels.levels:
+        levels.load_level(level)
 
     current_level = {
         "map_no": 0,
         "player": player,
-        "background_layer": Levels.levels[0]["background_layer"],
-        "main_layer": Levels.levels[0]["main_layer"],
-        "top_layer": Levels.levels[0]["top_layer"],
-        "level": Levels.levels[0]
+        "background_layer": levels.levels[0]["background_layer"],
+        "main_layer": levels.levels[0]["main_layer"],
+        "top_layer": levels.levels[0]["top_layer"],
+        "level": levels.levels[0]
     }
 
     return current_level
