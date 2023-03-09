@@ -151,7 +151,7 @@ def create_background(layer_definition, x, y, _char):
 
 
 def create_sign(layer_definition, x, y, char):
-    def on_sign(block, game_state):
+    def on_sign(block, _game_state):
         print(f"And now display text '{block['text']}'")
 
     block = create_block(x, y, "load-map", True, None)
