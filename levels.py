@@ -7,10 +7,10 @@ from houses import finish_house1, finish_house2, finish_house_small1
 levels = []
 
 
-def change_map(block, current_level):
+def change_map(block, game_state):
     map_no = block["map"]
-    current_map_no = current_level["map_no"]
-    player = current_level["player"]
+    current_map_no = game_state["map_no"]
+    player = game_state["player"]
     background_layer = levels[map_no]["background_layer"]
     main_layer = levels[map_no]["main_layer"]
     top_layer = levels[map_no]["top_layer"]
@@ -23,10 +23,10 @@ def change_map(block, current_level):
             player_rect = player["rect"]
             player_rect.x = block["rect"].x
             player_rect.y = block["rect"].y
-            current_level["map_no"] = map_no
-            current_level["background_layer"] = background_layer
-            current_level["main_layer"] = main_layer
-            current_level["top_layer"] = top_layer
+            game_state["map_no"] = map_no
+            game_state["background_layer"] = background_layer
+            game_state["main_layer"] = main_layer
+            game_state["top_layer"] = top_layer
 
 
 def load_level(level):
@@ -150,31 +150,41 @@ def create_background(layer_definition, x, y, _char):
     layer_definition["main_layer"].append(create_block(x, y, "empty", True, None))
 
 
+def create_sign(layer_definition, x, y, char):
+    def on_sign(block, game_state):
+        print(f"And now display text '{block['text']}'")
+
+    block = create_block(x, y, "load-map", True, None)
+    block["img_tile"] = 83
+    block["text"] = layer_definition["texts"][char]
+    block["on_enter_tile"] = on_sign
+    layer_definition["main_layer"].append(block)
+    return block
+
+#
+# def create_sign2(layer_definition, x, y, char):
+#     b = create_sign(layer_definition, x, y, char)
+#     b["text"] = "Bye!"
+
+
 default_translation = {
     "#": create_forest,
     "+": create_path,
     "X": create_blocker,
-    "0": create_portal,
-    "1": create_portal,
-    "2": create_portal,
-    "3": create_portal,
-    "4": create_portal,
-    "5": create_portal,
-    "6": create_portal,
-    "7": create_portal,
-    "8": create_portal,
-    "9": create_portal,
     " ": create_background
-}
+} | { chr(c + ord("0")): create_portal for c in range(10) }
 
 
 levels.append({
     "name": "level1",
+    "texts": {
+        "S": "hello", "B": "bye"
+    },
     "map": [
         "####################",
         "#                  #",
         "#   ++++++++ XXXX  #",
-        "#   +      + XXXX  #",
+        "#   +B    S+ XXXX  #",
         "1++++      + XXGX  #",
         "#   + XXXX +   +   #",
         "#   + XXXX +++++   #",
@@ -186,6 +196,8 @@ levels.append({
     "map_translations": {
         "H": create_house1,
         "G": create_house2,
+        "S": create_sign,
+        "B": create_sign,
     }
 })
 
@@ -197,7 +209,7 @@ levels.append({
         "#            XXXX  #",
         "#            XXXX  #",
         "#+++++++++++ XXHX  #",
-        "#          ++++++++0",
+        "#         S++++++++0",
         "#          +       #",
         "#          +  XXX  #",
         "#          +  XhX  #",
@@ -206,6 +218,6 @@ levels.append({
     ],
     "map_translations": {
         "H": create_house2,
-        "h": create_house_small1,
+        "h": create_house_small1
     }
 })

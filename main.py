@@ -32,7 +32,7 @@ def initialise():
     for level in levels.levels:
         levels.load_level(level)
 
-    current_level = {
+    game_state = {
         "map_no": 0,
         "player": player,
         "background_layer": levels.levels[0]["background_layer"],
@@ -41,7 +41,7 @@ def initialise():
         "level": levels.levels[0]
     }
 
-    return current_level
+    return game_state
 
 
 def player_tries_to_leave_map():
